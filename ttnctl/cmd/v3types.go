@@ -44,11 +44,15 @@ type v3DeviceSession struct {
 	LastNFCntDown uint32              `json:"last_n_f_cnt_down"`
 }
 
+type v3RxDelay struct {
+	Value string `json:"value,omitempty"`
+}
+
 type v3DeviceMACSettings struct {
-	Rx1Delay                 string   `json:"value,omitempty"`
-	Supports32BitFCnt        bool     `json:"supports_32_bit_f_cnt"`
-	ResetsFCnt               bool     `json:"resets_f_cnt"`
-	FactoryPresetFrequencies []uint64 `json:"factory_preset_frequencies,omitempty"`
+	Rx1Delay                 v3RxDelay `json:"rx1_delay,omitempty"`
+	Supports32BitFCnt        bool      `json:"supports_32_bit_f_cnt"`
+	ResetsFCnt               bool      `json:"resets_f_cnt"`
+	FactoryPresetFrequencies []uint64  `json:"factory_preset_frequencies,omitempty"`
 }
 
 type v3Device struct {

@@ -64,7 +64,7 @@ func exportV3Device(dev *handler.Device, flags *pflag.FlagSet) *v3Device {
 	v3Dev.PHYVersion = "PHY_V1_0_2_REV_B"
 
 	v3Dev.SupportsJoin = lorawanDevice.AppKey.String() != ""
-	v3Dev.MACSettings.Rx1Delay = "RX_DELAY_1"
+	v3Dev.MACSettings.Rx1Delay.Value = "RX_DELAY_1"
 
 	frequencyPlanFlag, _ := flags.GetString("frequency-plan-id")
 	frequencyPlan, err := getOption(frequencyPlans, frequencyPlanFlag)
