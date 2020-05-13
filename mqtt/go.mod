@@ -1,6 +1,6 @@
 module github.com/TheThingsNetwork/ttn/mqtt
 
-go 1.11
+go 1.14
 
 replace github.com/TheThingsNetwork/ttn/core/types => ../core/types
 
@@ -16,5 +16,6 @@ require (
 	github.com/TheThingsNetwork/ttn/utils/random v0.0.0-20190516092602-86414c703ee1
 	github.com/TheThingsNetwork/ttn/utils/testing v0.0.0-20190516092602-86414c703ee1
 	github.com/eclipse/paho.mqtt.golang v1.2.0
-	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3
+	github.com/smartystreets/assertions v1.0.1
+	golang.org/x/net v0.0.0-20200320220750-118fecf932d8 // indirect
 )

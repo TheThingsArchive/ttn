@@ -8,7 +8,7 @@ services:
     - docker
 
 go:
-    - "1.13.x"
+    - "1.14.x"
 
 env:
   global:

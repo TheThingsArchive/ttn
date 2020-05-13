@@ -28,8 +28,8 @@ func TestDownlink(t *testing.T) {
 			Monitor: monitorclient.NewMonitorClient(),
 		},
 		ns: &mockNetworkServer{},
-		routers: map[string]chan *pb.DownlinkMessage{
-			"routerID": dlch,
+		routers: map[string]*router{
+			"routerID": &router{downlinkConns: 1, downlink: dlch},
 		},
 	}
 	b.InitStatus()
