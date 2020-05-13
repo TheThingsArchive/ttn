@@ -79,7 +79,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	h.RegisterReceived(activation)
 	defer func() {
 		if err != nil {
-			h.qEvent <- &types.DeviceEvent{
+			select {
+			case h.qEvent <- &types.DeviceEvent{
 				AppID: appID,
 				DevID: devID,
 				Event: types.ActivationErrorEvent,
@@ -88,6 +89,9 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 					DevEUI:         activation.DevEUI,
 					ErrorEventData: types.ErrorEventData{Error: err.Error()},
 				},
+			}:
+			case <-time.After(eventPublishTimeout):
+				ctx.Warnf("Could not emit %q event", types.ActivationErrorEvent)
 			}
 			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle activation")
@@ -190,7 +194,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	// Publish Activation
 	mqttMetadata, _ := h.getActivationMetadata(ctx, activation, dev)
-	h.qEvent <- &types.DeviceEvent{
+	select {
+	case h.qEvent <- &types.DeviceEvent{
 		AppID: appID,
 		DevID: devID,
 		Event: types.ActivationEvent,
@@ -200,6 +205,9 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 			DevAddr:  types.DevAddr(joinAccept.DevAddr),
 			Metadata: mqttMetadata,
 		},
+	}:
+	case <-time.After(eventPublishTimeout):
+		ctx.Warnf("Could not emit %q event", types.ActivationEvent)
 	}
 
 	// Generate random AppNonce
@@ -265,6 +273,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 }
 
 func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broker.DeduplicatedDeviceActivationRequest) (*device.Device, error) {
+	ctx := h.Ctx.WithFields(logfields.ForMessage(activation))
+
 	clone := base.Clone()
 	clone.DevID = strings.ToLower(fmt.Sprintf("%s-%s", base.DevID, activation.DevEUI.String()))
 	clone.DevEUI = activation.DevEUI
@@ -297,11 +307,15 @@ func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broke
 		return nil, err
 	}
 
-	h.qEvent <- &types.DeviceEvent{
+	select {
+	case h.qEvent <- &types.DeviceEvent{
 		AppID: clone.AppID,
 		DevID: clone.DevID,
 		Event: types.CreateEvent,
 		Data:  nil, // Don't send potentially sensitive details over MQTT
+	}:
+	case <-time.After(eventPublishTimeout):
+		ctx.Warnf("Could not emit %q event", types.CreateEvent)
 	}
 
 	return clone, nil

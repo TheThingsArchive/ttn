@@ -4,6 +4,8 @@
 package handler
 
 import (
+	"time"
+
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/api/trace"
@@ -59,13 +61,17 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 			// If it's confirmed, we can only unset it if we receive an ack.
 			if macPayload.Ack {
 				// Send event over MQTT
-				h.qEvent <- &types.DeviceEvent{
+				select {
+				case h.qEvent <- &types.DeviceEvent{
 					AppID: appUp.AppID,
 					DevID: appUp.DevID,
 					Event: types.DownlinkAckEvent,
 					Data: types.DownlinkEventData{
 						Message: dev.CurrentDownlink,
 					},
+				}:
+				case <-time.After(eventPublishTimeout):
+					ctx.Warnf("Could not emit %q event", types.DownlinkAckEvent)
 				}
 				dev.CurrentDownlink = nil
 			}

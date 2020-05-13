@@ -6,6 +6,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_handler "github.com/TheThingsNetwork/api/handler"
@@ -56,11 +57,15 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 	fields, valid, err := decoder.Decode(appUp.PayloadRaw, appUp.FPort)
 	if err != nil {
 		// Emit the error
-		h.qEvent <- &types.DeviceEvent{
+		select {
+		case h.qEvent <- &types.DeviceEvent{
 			AppID: appUp.AppID,
 			DevID: appUp.DevID,
 			Event: types.UplinkErrorEvent,
 			Data:  types.ErrorEventData{Error: fmt.Sprintf("Unable to decode payload fields: %s", err)},
+		}:
+		case <-time.After(eventPublishTimeout):
+			ctx.Warnf("Could not emit %q event", types.UplinkErrorEvent)
 		}
 
 		// Do not set fields if processing failed, but allow the handler to continue processing
@@ -76,11 +81,15 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 	_, err = json.Marshal(fields)
 	if err != nil {
 		// Emit the error
-		h.qEvent <- &types.DeviceEvent{
+		select {
+		case h.qEvent <- &types.DeviceEvent{
 			AppID: appUp.AppID,
 			DevID: appUp.DevID,
 			Event: types.UplinkErrorEvent,
 			Data:  types.ErrorEventData{Error: fmt.Sprintf("Payload Function output cannot be marshaled to JSON: %s", err.Error())},
+		}:
+		case <-time.After(eventPublishTimeout):
+			ctx.Warnf("Could not emit %q event", types.UplinkErrorEvent)
 		}
 
 		// Do not set fields if processing failed, but allow the handler to continue processing

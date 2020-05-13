@@ -5,6 +5,7 @@ package handler
 
 import (
 	"fmt"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	"github.com/TheThingsNetwork/api/broker/brokerclient"
@@ -35,6 +36,9 @@ type Handler interface {
 	HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error)
 	EnqueueDownlink(appDownlink *types.DownlinkMessage) error
 }
+
+// Timeout for publishing events to prevent blocking critical path.
+var eventPublishTimeout = 10 * time.Millisecond
 
 // NewRedisHandler creates a new Redis-backed Handler
 func NewRedisHandler(client *redis.Client, ttnBrokerID string) Handler {

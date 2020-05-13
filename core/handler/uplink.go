@@ -23,11 +23,15 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	h.RegisterReceived(uplink)
 	defer func() {
 		if err != nil {
-			h.qEvent <- &types.DeviceEvent{
+			select {
+			case h.qEvent <- &types.DeviceEvent{
 				AppID: appID,
 				DevID: devID,
 				Event: types.UplinkErrorEvent,
 				Data:  types.ErrorEventData{Error: err.Error()},
+			}:
+			case <-time.After(eventPublishTimeout):
+				ctx.Warnf("Could not emit %q event", types.UplinkErrorEvent)
 			}
 			ctx.WithError(err).Warn("Could not handle uplink")
 			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
@@ -108,7 +112,11 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 				}
 				dev.CurrentDownlink = next
 			} else {
-				h.qEvent <- noDownlinkErrEvent
+				select {
+				case h.qEvent <- noDownlinkErrEvent:
+				case <-time.After(eventPublishTimeout):
+					ctx.Warnf("Could not emit %q event", noDownlinkErrEvent.Event)
+				}
 				return nil
 			}
 		}
@@ -116,7 +124,11 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 
 	if uplink.ResponseTemplate == nil {
 		if dev.CurrentDownlink != nil {
-			h.qEvent <- noDownlinkErrEvent
+			select {
+			case h.qEvent <- noDownlinkErrEvent:
+			case <-time.After(eventPublishTimeout):
+				ctx.Warnf("Could not emit %q event", noDownlinkErrEvent.Event)
+			}
 		}
 		return nil
 	}
