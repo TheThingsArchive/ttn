@@ -7,8 +7,8 @@ replace github.com/TheThingsNetwork/ttn/utils/errors => ../../utils/errors
 replace github.com/brocaar/lorawan => github.com/ThethingsIndustries/legacy-lorawan-lib v0.0.0-20190212122748-b905ab327304
 
 require (
-	github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20190516081709-034d40b328bd
-	github.com/brocaar/lorawan v0.0.0-20170626123636-a64aca28516d
+	github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20200807123328-b39cc6b19c87
+	github.com/brocaar/lorawan v0.0.0-20200726141338-ee070f85d494
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/jacobsa/crypto v0.0.0-20190317225127-9f44e2d11115 // indirect
 	github.com/jacobsa/oglematchers v0.0.0-20150720000706-141901ea67cd // indirect
