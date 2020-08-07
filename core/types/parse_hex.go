@@ -5,9 +5,10 @@ package types
 
 import (
 	"encoding/hex"
-	"fmt"
-	"regexp"
+	"errors"
 )
+
+var errInvalidLength = errors.New("wrong input length")
 
 // ParseHEX parses a string "input" to a byteslice with length "length".
 func ParseHEX(input string, length int) ([]byte, error) {
@@ -15,14 +16,9 @@ func ParseHEX(input string, length int) ([]byte, error) {
 		return make([]byte, length), nil
 	}
 
-	pattern := regexp.MustCompile(fmt.Sprintf("^[[:xdigit:]]{%d}$", length*2))
-
-	valid := pattern.MatchString(input)
-	if !valid {
-		return nil, fmt.Errorf("Invalid input: %s is not hex", input)
+	if len(input) != length*2 {
+		return nil, errInvalidLength
 	}
 
-	slice, _ := hex.DecodeString(input)
-
-	return slice, nil
+	return hex.DecodeString(input)
 }
