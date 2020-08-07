@@ -12,7 +12,7 @@ import (
 )
 
 // BuildJWT builds a JSON Web Token for the given subject and ttl, and signs it with the given private key
-func BuildJWT(subject string, ttl time.Duration, privateKey []byte) (token string, err error) {
+func BuildJWT(subject string, ttl time.Duration, key *ecdsa.PrivateKey) (token string, err error) {
 	claims := jwt.StandardClaims{
 		Issuer:    subject,
 		Subject:   subject,
@@ -23,11 +23,6 @@ func BuildJWT(subject string, ttl time.Duration, privateKey []byte) (token strin
 		claims.ExpiresAt = time.Now().Add(ttl).Unix()
 	}
 	tokenBuilder := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	var key *ecdsa.PrivateKey
-	key, err = jwt.ParseECPrivateKeyFromPEM(privateKey)
-	if err != nil {
-		return
-	}
 	token, err = tokenBuilder.SignedString(key)
 	if err != nil {
 		return

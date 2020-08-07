@@ -205,11 +205,7 @@ func (c *Component) BuildJWT() (string, error) {
 	if c.Identity == nil {
 		return "", nil
 	}
-	privPEM, err := security.PrivatePEM(c.privateKey)
-	if err != nil {
-		return "", err
-	}
-	return security.BuildJWT(c.Identity.ID, 20*time.Second, privPEM)
+	return security.BuildJWT(c.Identity.ID, 20*time.Second, c.privateKey)
 }
 
 // GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
