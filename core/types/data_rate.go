@@ -18,10 +18,11 @@ type DataRate struct {
 	Bandwidth       uint `json:"bandwidth,omitempty"`
 }
 
+var datarateRegex = regexp.MustCompile("SF(7|8|9|10|11|12)BW(125|250|500)")
+
 // ParseDataRate parses a 32-bit hex-encoded string to a Devdatr
 func ParseDataRate(input string) (datr *DataRate, err error) {
-	re := regexp.MustCompile("SF(7|8|9|10|11|12)BW(125|250|500)")
-	matches := re.FindStringSubmatch(input)
+	matches := datarateRegex.FindStringSubmatch(input)
 	if len(matches) != 3 {
 		return nil, errors.New("ttn/core: Invalid DataRate")
 	}
