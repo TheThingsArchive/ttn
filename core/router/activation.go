@@ -156,28 +156,25 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		close(responses)
 	}()
 
-	var gotFirst bool
+	var found bool
 	for res := range responses {
-		if gotFirst {
-			ctx.Warn("Duplicate Activation Response")
+		downlink := &pb_broker.DownlinkMessage{
+			Payload:        res.Payload,
+			Message:        res.Message,
+			DownlinkOption: res.DownlinkOption,
+			Trace:          res.Trace,
+		}
+		err := r.HandleDownlink(downlink)
+		if err != nil {
+			ctx.Warn("Could not send downlink for Activation")
 		} else {
-			gotFirst = true
-			downlink := &pb_broker.DownlinkMessage{
-				Payload:        res.Payload,
-				Message:        res.Message,
-				DownlinkOption: res.DownlinkOption,
-				Trace:          res.Trace,
-			}
-			err := r.HandleDownlink(downlink)
-			if err != nil {
-				ctx.Warn("Could not send downlink for Activation")
-				gotFirst = false // try again
-			}
+			found = true
+			break
 		}
 	}
 
 	// Activation not accepted by any broker
-	if !gotFirst {
+	if !found {
 		ctx.Debug("Activation not accepted at this gateway")
 		return nil, errors.New("Activation not accepted at this Gateway")
 	}
