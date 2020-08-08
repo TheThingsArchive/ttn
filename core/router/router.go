@@ -145,6 +145,8 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	return gtw
 }
 
+const downlinkHandlersPerBroker = 64
+
 // getBroker gets or creates a broker association and returns the broker
 // the first time it also starts a goroutine that receives downlink from the broker
 func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*broker, error) {
@@ -159,50 +161,64 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 	// If it doesn't we still have to lock
 	r.brokersLock.Lock()
 	defer r.brokersLock.Unlock()
-	if _, ok := r.brokers[brokerAnnouncement.ID]; !ok {
-		var err error
+	if brk, ok := r.brokers[brokerAnnouncement.ID]; ok {
+		return brk, nil
+	}
 
-		brk := &broker{
-			uplink: make(chan *pb_broker.UplinkMessage),
+	brk = &broker{
+		uplink: make(chan *pb_broker.UplinkMessage),
+	}
+
+	// Connect to the server
+	var err error
+	brk.conn, err = brokerAnnouncement.Dial(r.Pool)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set up the non-streaming client
+	brk.client = pb_broker.NewBrokerClient(brk.conn)
+
+	// Set up the streaming client
+	config := brokerclient.DefaultClientConfig
+	config.BackgroundContext = r.Component.Context
+	cli := brokerclient.NewClient(config)
+	cli.AddServer(brokerAnnouncement.ID, brk.conn)
+	brk.association = cli.NewRouterStreams(r.Identity.ID, "")
+
+	go func() {
+		for {
+			message := <-brk.uplink
+			brk.association.Uplink(message)
 		}
+	}()
 
-		// Connect to the server
-		brk.conn, err = brokerAnnouncement.Dial(r.Pool)
-		if err != nil {
-			return nil, err
-		}
-
-		// Set up the non-streaming client
-		brk.client = pb_broker.NewBrokerClient(brk.conn)
-
-		// Set up the streaming client
-		config := brokerclient.DefaultClientConfig
-		config.BackgroundContext = r.Component.Context
-		cli := brokerclient.NewClient(config)
-		cli.AddServer(brokerAnnouncement.ID, brk.conn)
-		brk.association = cli.NewRouterStreams(r.Identity.ID, "")
-
-		go func() {
-			downlinkStream := brk.association.Downlink()
-			refreshDownlinkStream := time.NewTicker(time.Second)
-			for {
-				select {
-				case message := <-brk.uplink:
-					brk.association.Uplink(message)
-				case <-refreshDownlinkStream.C:
-					downlinkStream = brk.association.Downlink()
-				case message, ok := <-downlinkStream:
-					if ok {
-						go r.HandleDownlink(message)
-					} else {
-						r.Ctx.WithField("broker", brokerAnnouncement.ID).Error("Downlink Stream errored")
-						downlinkStream = nil
-					}
+	logger := r.Ctx.WithField("broker", brokerAnnouncement.ID)
+	downlinkHandler := func() {
+		downlinkStream := brk.association.Downlink()
+		refreshDownlinkStream := time.NewTicker(time.Second)
+		for {
+			select {
+			case <-refreshDownlinkStream.C:
+				downlinkStream = brk.association.Downlink()
+			case message, ok := <-downlinkStream:
+				if !ok {
+					logger.Error("Downlink Stream errored")
+					downlinkStream = nil
+					continue
+				}
+				if err := r.HandleDownlink(message); err != nil {
+					logger.WithError(err).Warn("Failed to handle downlink")
 				}
 			}
-		}()
-
-		r.brokers[brokerAnnouncement.ID] = brk
+		}
 	}
-	return r.brokers[brokerAnnouncement.ID], nil
+
+	for i := 0; i < downlinkHandlersPerBroker; i++ {
+		go downlinkHandler()
+	}
+
+	r.brokers[brokerAnnouncement.ID] = brk
+
+	return brk, nil
 }
