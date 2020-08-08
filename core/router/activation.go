@@ -131,6 +131,8 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
 	responses := make(chan *pb_broker.DeviceActivationResponse, len(brokers))
+	rCtx, cancel := context.WithTimeout(r.Component.GetContext(""), 5*time.Second)
+	defer cancel()
 	for _, broker := range brokers {
 		broker, err := r.getBroker(broker)
 		if err != nil {
@@ -140,9 +142,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		// Do async request
 		wg.Add(1)
 		go func() {
-			ctx, cancel := context.WithTimeout(r.Component.GetContext(""), 5*time.Second)
-			defer cancel()
-			res, err := broker.client.Activate(ctx, request)
+			res, err := broker.client.Activate(rCtx, request)
 			if err == nil && res != nil {
 				responses <- res
 			}
