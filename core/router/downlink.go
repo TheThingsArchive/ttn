@@ -32,19 +32,7 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 	if token := gateway.Token(); gatewayID != "" && token != "" {
 		r.Discovery.AddGatewayID(gatewayID, token)
 	}
-	monitored := make(chan *pb.DownlinkMessage)
-	go func() {
-		for downlink := range sub {
-			monitored <- downlink
-			if gateway.MonitorStream != nil {
-				clone := *downlink // There can be multiple subscribers
-				clone.Trace = clone.Trace.WithEvent(trace.SendEvent)
-				gateway.MonitorStream.Send(&clone)
-			}
-		}
-		close(monitored)
-	}()
-	return monitored, nil
+	return sub, nil
 }
 
 func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) error {

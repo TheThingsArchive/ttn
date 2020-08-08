@@ -9,6 +9,7 @@ import (
 	"time"
 
 	pb "github.com/TheThingsNetwork/api/router"
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
@@ -176,6 +177,11 @@ func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_Subscri
 			}
 			if err := stream.Send(downlink); err != nil {
 				return err
+			}
+			if gateway.MonitorStream != nil {
+				clone := *downlink // There can be multiple subscribers
+				clone.Trace = clone.Trace.WithEvent(trace.SendEvent)
+				gateway.MonitorStream.Send(&clone)
 			}
 		}
 	}
