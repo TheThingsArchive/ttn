@@ -11,12 +11,10 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/api/gateway"
-	"github.com/TheThingsNetwork/api/logfields"
 	pb_protocol "github.com/TheThingsNetwork/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/api/router"
 	"github.com/TheThingsNetwork/api/trace"
-	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -26,33 +24,27 @@ import (
 )
 
 func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-chan *pb.DownlinkMessage, error) {
-	ctx := r.Ctx.WithFields(ttnlog.Fields{
-		"GatewayID": gatewayID,
-	})
-
 	gateway := r.getGateway(gatewayID)
-	if fromSchedule := gateway.Schedule.Subscribe(subscriptionID); fromSchedule != nil {
-		if token := gateway.Token(); gatewayID != "" && token != "" {
-			r.Discovery.AddGatewayID(gatewayID, token)
-		}
-		toGateway := make(chan *pb.DownlinkMessage)
-		go func() {
-			ctx.Debug("Activate downlink")
-			for message := range fromSchedule {
-				ctx.WithFields(logfields.ForMessage(message)).Debug("Send downlink")
-				toGateway <- message
-				if gateway.MonitorStream != nil {
-					clone := *message // There can be multiple subscribers
-					clone.Trace = clone.Trace.WithEvent(trace.SendEvent)
-					gateway.MonitorStream.Send(&clone)
-				}
-			}
-			ctx.Debug("Deactivate downlink")
-			close(toGateway)
-		}()
-		return toGateway, nil
+	sub := gateway.Schedule.Subscribe(subscriptionID)
+	if sub == nil {
+		return nil, errors.NewErrInternal(fmt.Sprintf("Already subscribed to downlink for %s", gatewayID))
 	}
-	return nil, errors.NewErrInternal(fmt.Sprintf("Already subscribed to downlink for %s", gatewayID))
+	if token := gateway.Token(); gatewayID != "" && token != "" {
+		r.Discovery.AddGatewayID(gatewayID, token)
+	}
+	monitored := make(chan *pb.DownlinkMessage)
+	go func() {
+		for downlink := range sub {
+			monitored <- downlink
+			if gateway.MonitorStream != nil {
+				clone := *downlink // There can be multiple subscribers
+				clone.Trace = clone.Trace.WithEvent(trace.SendEvent)
+				gateway.MonitorStream.Send(&clone)
+			}
+		}
+		close(monitored)
+	}()
+	return monitored, nil
 }
 
 func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) error {

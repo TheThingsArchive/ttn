@@ -5,17 +5,17 @@ package router
 
 import (
 	"fmt"
+	"io"
 	"time"
 
-	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	pb "github.com/TheThingsNetwork/api/router"
-	"github.com/TheThingsNetwork/api/router/routerclient"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
+	"github.com/gogo/protobuf/types"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -25,7 +25,6 @@ import (
 
 type routerRPC struct {
 	router *router
-	routerclient.RouterStreamServer
 
 	uplinkRate *ratelimit.Registry
 	statusRate *ratelimit.Registry
@@ -75,58 +74,111 @@ func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gatewa
 	return r.gatewayFromMetadata(md)
 }
 
-func (r *routerRPC) getUplink(md metadata.MD) (ch chan *pb.UplinkMessage, err error) {
-	gateway, err := r.gatewayFromMetadata(md)
+// Uplink handles uplink streams
+func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
+	ctx := stream.Context()
+	gateway, err := r.gatewayFromContext(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	ch = make(chan *pb.UplinkMessage)
-	go func() {
-		for uplink := range ch {
-			if waitTime := r.uplinkRate.Wait(gateway.ID); waitTime != 0 {
-				r.router.Ctx.WithField("GatewayID", gateway.ID).WithField("Wait", waitTime).Warn("Gateway reached uplink rate limit")
-				time.Sleep(waitTime)
-			}
-			r.router.HandleUplink(gateway.ID, uplink)
-
+	logger := r.router.Ctx.WithField("GatewayID", gateway.ID)
+	if err = stream.SendHeader(metadata.MD{}); err != nil {
+		return err
+	}
+	for {
+		uplink, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&types.Empty{})
 		}
-	}()
-	return
+		if err != nil {
+			return err
+		}
+		if err := uplink.Validate(); err != nil {
+			logger.WithError(err).Warn("Invalid Uplink")
+			continue
+		}
+		if err := uplink.UnmarshalPayload(); err != nil {
+			logger.WithError(err).Warn("Could not unmarshal Uplink payload")
+		}
+		if waitTime := r.uplinkRate.Wait(gateway.ID); waitTime != 0 {
+			logger.WithField("Wait", waitTime).Warn("Gateway reached uplink rate limit")
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(waitTime):
+			}
+		}
+		if err := r.router.HandleUplink(gateway.ID, uplink); err != nil {
+			logger.WithError(err).Warn("Failed to handle uplink")
+		}
+	}
 }
 
-func (r *routerRPC) getGatewayStatus(md metadata.MD) (ch chan *pb_gateway.Status, err error) {
-	gateway, err := r.gatewayFromMetadata(md)
+// GatewayStatus handles gateway status streams
+func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
+	ctx := stream.Context()
+	gateway, err := r.gatewayFromContext(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	ch = make(chan *pb_gateway.Status)
-	go func() {
-		for status := range ch {
-			if waitTime := r.statusRate.Wait(gateway.ID); waitTime != 0 {
-				r.router.Ctx.WithField("GatewayID", gateway.ID).WithField("Wait", waitTime).Warn("Gateway reached status rate limit")
-				time.Sleep(waitTime)
-			}
-			r.router.HandleGatewayStatus(gateway.ID, status)
+	logger := r.router.Ctx.WithField("GatewayID", gateway.ID)
+	if err := stream.SendHeader(metadata.MD{}); err != nil {
+		return err
+	}
+	for {
+		status, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&types.Empty{})
 		}
-	}()
-	return
+		if err != nil {
+			return err
+		}
+		if err := status.Validate(); err != nil {
+			return errors.Wrap(err, "Invalid Gateway Status")
+		}
+		if waitTime := r.statusRate.Wait(gateway.ID); waitTime != 0 {
+			logger.WithField("Wait", waitTime).Warn("Gateway reached status rate limit")
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(waitTime):
+			}
+		}
+		if err := r.router.HandleGatewayStatus(gateway.ID, status); err != nil {
+			logger.WithError(err).Warn("Failed to handle gateway status")
+		}
+	}
 }
 
-func (r *routerRPC) getDownlink(md metadata.MD) (ch <-chan *pb.DownlinkMessage, cancel func(), err error) {
-	gateway, err := r.gatewayFromMetadata(md)
+// Subscribe handles downlink streams
+func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_SubscribeServer) error {
+	ctx := stream.Context()
+	gateway, err := r.gatewayFromContext(ctx)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-	subscriptionID := random.String(10)
-	ch = make(chan *pb.DownlinkMessage)
-	cancel = func() {
-		r.router.UnsubscribeDownlink(gateway.ID, subscriptionID)
-	}
-	downlinkChannel, err := r.router.SubscribeDownlink(gateway.ID, subscriptionID)
+	subscriptionID := random.String(16)
+	downlinks, err := r.router.SubscribeDownlink(gateway.ID, subscriptionID)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-	return downlinkChannel, cancel, nil
+	defer r.router.UnsubscribeDownlink(gateway.ID, subscriptionID)
+	if err = stream.SendHeader(metadata.MD{}); err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case downlink, ok := <-downlinks:
+			if !ok {
+				return nil
+			}
+			if err := stream.Send(downlink); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 // Activate implements RouterServer interface (github.com/TheThingsNetwork/api/router)
@@ -147,11 +199,6 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 // RegisterRPC registers this router as a RouterServer (github.com/TheThingsNetwork/api/router)
 func (r *router) RegisterRPC(s *grpc.Server) {
 	server := &routerRPC{router: r}
-	server.SetLogger(r.Ctx)
-	server.UplinkChanFunc = server.getUplink
-	server.DownlinkChanFunc = server.getDownlink
-	server.GatewayStatusChanFunc = server.getGatewayStatus
-
 	// TODO: Monitor actual rates and configure sensible limits
 	//
 	// The current values are based on the following:
