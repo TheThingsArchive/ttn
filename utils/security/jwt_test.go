@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -24,7 +25,10 @@ Oft1TEC43DTCN5vCSfupyBS7ZKgUUjg4E0Aq5SIJENqeRP3tTko8O3VZYQ==
 func TestJWT(t *testing.T) {
 	a := New(t)
 
-	jwt, err := BuildJWT("the-subject", time.Second, []byte(privKey))
+	key, err := jwt.ParseECPrivateKeyFromPEM([]byte(privKey))
+	a.So(err, ShouldBeNil)
+
+	jwt, err := BuildJWT("the-subject", time.Second, key)
 	a.So(err, ShouldBeNil)
 
 	claims, err := ValidateJWT(jwt, []byte(pubKey))
