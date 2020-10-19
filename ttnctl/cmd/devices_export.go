@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/TheThingsNetwork/api"
 	"github.com/TheThingsNetwork/api/handler"
@@ -14,6 +15,10 @@ import (
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+)
+
+const (
+	interval = time.Millisecond
 )
 
 func exportV3Device(dev *handler.Device, flags *pflag.FlagSet) *v3Device {
@@ -131,7 +136,19 @@ var devicesExportAllCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get devices.")
 		}
 
+		withFrameCounters, _ := cmd.Flags().GetBool("with-frame-counters")
 		for _, dev := range devs {
+			if withFrameCounters {
+				time.Sleep(interval)
+				lwDev, err := manager.GetDevice(dev.AppID, dev.DevID)
+				if err != nil {
+					ctx.WithError(err).WithField("device_id", dev.DevID).Warn("Could not export frame counters.")
+				} else {
+					dev.GetLoRaWANDevice().FCntDown = lwDev.GetLoRaWANDevice().FCntDown
+					dev.GetLoRaWANDevice().FCntUp = lwDev.GetLoRaWANDevice().FCntUp
+					dev.GetLoRaWANDevice().LastSeen = lwDev.GetLoRaWANDevice().LastSeen
+				}
+			}
 			format, _ := cmd.Flags().GetString("format")
 			switch format {
 			case "v3":
@@ -158,4 +175,5 @@ func init() {
 	devicesCmd.AddCommand(devicesExportAllCmd)
 	devicesExportCmd.Flags().AddFlagSet(v3ExportFlagSet())
 	devicesExportAllCmd.Flags().AddFlagSet(v3ExportFlagSet())
+	devicesExportAllCmd.Flags().Bool("with-frame-counters", false, "Export frame counters for device. Note that this can take a long time.")
 }
