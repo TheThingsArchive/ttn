@@ -29,17 +29,11 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 	if sub == nil {
 		return nil, errors.NewErrInternal(fmt.Sprintf("Already subscribed to downlink for %s", gatewayID))
 	}
-	if token := gateway.Token(); gatewayID != "" && token != "" {
-		r.Discovery.AddGatewayID(gatewayID, token)
-	}
 	return sub, nil
 }
 
 func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) error {
 	gateway := r.getGateway(gatewayID)
-	if token := gateway.Token(); gatewayID != "" && token != "" {
-		r.Discovery.RemoveGatewayID(gatewayID, token)
-	}
 	gateway.Schedule.Stop(subscriptionID)
 	return nil
 }
