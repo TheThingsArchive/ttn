@@ -5,6 +5,7 @@ package handler
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -142,6 +143,15 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb_handler.DeviceIde
 	return pbDev, nil
 }
 
+var deviceRegistrationsDisabled = func() bool {
+	env := os.Getenv("DISABLE_DEVICE_REGISTRATIONS")
+	if env == "" {
+		return false
+	}
+	disabled, _ := strconv.ParseBool(env)
+	return disabled
+}()
+
 func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (*gogo.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device")
@@ -191,6 +201,10 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 
 		dev.StartUpdate()
 	} else {
+		if deviceRegistrationsDisabled {
+			return nil, errors.NewErrPermissionDenied("Registrations of new devices in V2 clusters have been disabled. Register new devices in a The Things Stack (V3) cluster and migrate your existing devices now! V2 clusters will permanently shut down in December 2021.")
+		}
+
 		eventType = types.CreateEvent
 		existingDevices, err := h.handler.devices.ListForApp(in.AppID, nil)
 		if err != nil {

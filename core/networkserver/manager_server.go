@@ -5,6 +5,8 @@ package networkserver
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	pb "github.com/TheThingsNetwork/api/networkserver"
@@ -83,6 +85,15 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}, nil
 }
 
+var deviceRegistrationsDisabled = func() bool {
+	env := os.Getenv("DISABLE_DEVICE_REGISTRATIONS")
+	if env == "" {
+		return false
+	}
+	disabled, _ := strconv.ParseBool(env)
+	return disabled
+}()
+
 func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*gogo.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device")
@@ -103,6 +114,10 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}
 
 	if dev == nil {
+		if deviceRegistrationsDisabled {
+			return nil, errors.NewErrPermissionDenied("Registrations of new devices in V2 clusters have been disabled. Register new devices in a The Things Stack (V3) cluster and migrate your existing devices now! V2 clusters will permanently shut down in December 2021.")
+		}
+
 		dev = new(device.Device)
 	} else {
 		dev.StartUpdate()
