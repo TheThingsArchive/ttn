@@ -15,7 +15,7 @@ cache:
 
 tests:
   stage: test
-  image: golang:1.14
+  image: golang:1.16
   services:
     - thethingsnetwork/rabbitmq
     - redis
@@ -30,7 +30,7 @@ tests:
 
 binaries:
   stage: build
-  image: golang:1.14
+  image: golang:1.16
   script:
     - mkdir release
     - export CI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
