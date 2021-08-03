@@ -183,6 +183,20 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 
 	var eventType types.EventType
 	if dev != nil {
+		md, _ := metadata.FromIncomingContext(ctx)
+		h.handler.Ctx.WithFields(ttnlog.Fields{
+			"AppID":          in.AppID,
+			"DevID":          in.DevID,
+			"UserAgent":      md.Get("user-agent"),
+			"ServiceName":    md.Get("service-name"),
+			"ServiceVersion": md.Get("service-version"),
+		}).Info("Attempting device update")
+		if deviceRegistrationsDisabled {
+			if !lorawan.AppKey.IsEmpty() { // We still need to allow ttn-lw-migrate to unset the AppKey.
+				return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your devices to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
+			}
+		}
+
 		eventType = types.UpdateEvent
 
 		// Not allowed to update join nonces after device is created
@@ -202,7 +216,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 		dev.StartUpdate()
 	} else {
 		if deviceRegistrationsDisabled {
-			return nil, errors.NewErrPermissionDenied("Registrations of new devices in V2 clusters have been disabled. Register new devices in a The Things Stack (V3) cluster and migrate your existing devices now! V2 clusters will permanently shut down in December 2021.")
+			return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your devices to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
 		}
 
 		eventType = types.CreateEvent
@@ -418,6 +432,11 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb_handler
 	if err != nil {
 		return nil, err
 	}
+
+	if deviceRegistrationsDisabled {
+		return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your applications to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
+	}
+
 	app, err := h.handler.applications.Get(in.AppID)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
 		return nil, err
@@ -447,7 +466,6 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb_handler
 	}
 
 	return &gogo.Empty{}, nil
-
 }
 
 func (h *handlerManager) SetApplication(ctx context.Context, in *pb_handler.Application) (*gogo.Empty, error) {
@@ -465,6 +483,10 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb_handler.Appl
 	app, err := h.handler.applications.Get(in.AppID)
 	if err != nil {
 		return nil, err
+	}
+
+	if deviceRegistrationsDisabled {
+		return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your applications to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
 	}
 
 	app.StartUpdate()

@@ -115,7 +115,7 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 
 	if dev == nil {
 		if deviceRegistrationsDisabled {
-			return nil, errors.NewErrPermissionDenied("Registrations of new devices in V2 clusters have been disabled. Register new devices in a The Things Stack (V3) cluster and migrate your existing devices now! V2 clusters will permanently shut down in December 2021.")
+			return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your devices to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
 		}
 
 		dev = new(device.Device)
