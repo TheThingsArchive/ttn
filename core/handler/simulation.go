@@ -53,6 +53,9 @@ func (h *handlerManager) SimulateUplink(ctx context.Context, in *pb.SimulatedUpl
 				Altitude:  dev.Altitude,
 			},
 		},
+		Attributes: map[string]string{
+			"warning": "The Things Network V2 is shutting down in December 2021. Migrate to V3 NOW!",
+		},
 	}
 
 	err = h.handler.ConvertFieldsUp(log, nil, uplink, dev)

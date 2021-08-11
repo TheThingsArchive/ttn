@@ -98,7 +98,12 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 	}
 
 	appUp.PayloadFields = fields
-	appUp.Attributes = dev.Attributes
+	if appUp.Attributes == nil {
+		appUp.Attributes = make(map[string]string)
+	}
+	for k, v := range dev.Attributes {
+		appUp.Attributes[k] = v
+	}
 
 	return nil
 }

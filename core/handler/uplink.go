@@ -57,6 +57,9 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	appUplink := &types.UplinkMessage{
 		AppID: appID,
 		DevID: devID,
+		Attributes: map[string]string{
+			"warning": "The Things Network V2 is shutting down in December 2021. Migrate to V3 NOW!",
+		},
 	}
 
 	// Get Uplink Processors
