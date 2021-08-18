@@ -183,20 +183,6 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 
 	var eventType types.EventType
 	if dev != nil {
-		md, _ := metadata.FromIncomingContext(ctx)
-		h.handler.Ctx.WithFields(ttnlog.Fields{
-			"AppID":          in.AppID,
-			"DevID":          in.DevID,
-			"UserAgent":      md.Get("user-agent"),
-			"ServiceName":    md.Get("service-name"),
-			"ServiceVersion": md.Get("service-version"),
-		}).Info("Attempting device update")
-		if deviceRegistrationsDisabled {
-			if !lorawan.AppKey.IsEmpty() { // We still need to allow ttn-lw-migrate to unset the AppKey.
-				return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your devices to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
-			}
-		}
-
 		eventType = types.UpdateEvent
 
 		// Not allowed to update join nonces after device is created
@@ -215,10 +201,6 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 
 		dev.StartUpdate()
 	} else {
-		if deviceRegistrationsDisabled {
-			return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your devices to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
-		}
-
 		eventType = types.CreateEvent
 		existingDevices, err := h.handler.devices.ListForApp(in.AppID, nil)
 		if err != nil {
@@ -238,6 +220,26 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 	}
 
 	dev.FromPb(in)
+
+	if deviceRegistrationsDisabled {
+		changedFields := dev.ChangedFields()
+		for _, changedField := range changedFields {
+			switch changedField {
+			case "AppKey", "UsedDevNonces", "UsedAppNonces": // Allow changing the AppKey.
+			default:
+				md, _ := metadata.FromIncomingContext(ctx)
+				h.handler.Ctx.WithFields(ttnlog.Fields{
+					"AppID":          in.AppID,
+					"DevID":          in.DevID,
+					"UserAgent":      md.Get("user-agent"),
+					"ServiceName":    md.Get("service-name"),
+					"ServiceVersion": md.Get("service-version"),
+					"Fields":         changedFields,
+				}).Info("Rejecting SetDevice")
+				return nil, errors.NewErrPermissionDenied("V2 clusters are now read-only. Migrate your devices to a The Things Stack (V3) cluster now! V2 clusters will permanently shut down in December 2021.")
+			}
+		}
+	}
 
 	if dev.Options.ActivationConstraints == "" {
 		dev.Options.ActivationConstraints = "local"
