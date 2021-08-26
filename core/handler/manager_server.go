@@ -225,7 +225,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 		changedFields := dev.ChangedFields()
 		for _, changedField := range changedFields {
 			switch changedField {
-			case "AppKey", "UsedDevNonces", "UsedAppNonces", "NwkSKey", "AppSKey": // Allow changing the AppKey for OTAA and the session keys for ABP.
+			case "AppKey", "UsedDevNonces", "DevAddr", "UsedAppNonces", "NwkSKey", "AppSKey": // Allow changing the AppKey for OTAA and the session data for ABP.
 			default:
 				md, _ := metadata.FromIncomingContext(ctx)
 				h.handler.Ctx.WithFields(ttnlog.Fields{
